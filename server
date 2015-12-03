@@ -1,0 +1,79 @@
+var WebSocketServer = require('ws').Server
+  , wss = new WebSocketServer({ port: 8001 });
+var cur_id=[];
+var cur_x=[];
+var cur_y=[];
+var cur_timer=[];
+var cur_num=-1;
+var timeout_value=30 //in sec
+
+function timeout(){
+	var b=0;
+	while(b<=cur_num){
+		if(cur_timer[b]<timeout_value*10+2)
+		//console.log(b+" is out in: " +cur_timer[b]);
+		cur_timer[b]++;
+		if(cur_timer[b]>timeout_value*10){
+			
+			cur_x[b]='-50';
+			cur_y[b]='-50';
+		}
+		if(cur_timer[b]>timeout_value*10+1){
+			cur_id[b]="NAN";
+		}
+		b++;
+	}
+	setTimeout(timeout, 100);
+}  
+timeout();  
+wss.broadcast = function broadcast(data) {
+	
+	wss.clients.forEach(function each(client) {
+		client.send(data);
+		
+		
+  });
+ 
+	
+};  
+wss.on('close', function close() {
+  //console.log('disconnected' + client);
+});
+wss.on('connection', function connection(ws) {
+	 cur_num++;
+	 
+  ws.on('message', function incoming(message) {
+    ////console.log('received: %s', message);
+	var a=message.split(",");
+	var b = parseInt(a[0]);
+	////console.log(b);
+	if (b==-1){
+		
+	}else{
+		////console.log(b);
+		cur_id[b]=b;
+		cur_timer[b]=0;
+		cur_x[b]=parseInt(a[1])-5;
+		cur_y[b]=parseInt(a[2]);
+	}
+	var i=0;
+	var temp = cur_num+",";
+	
+	
+	while(i<=cur_num){
+		if(isNaN(cur_id[i])){
+			////console.log("THIS IS A NAN");
+		}else{
+			temp+=+cur_id[i]+","+cur_x[i]+","+cur_y[i]+",";
+		}
+		
+		i++;
+	}
+	wss.broadcast(temp);
+	//console.log(temp);
+	
+  });
+	
+  //ws.send('something');
+});
+
